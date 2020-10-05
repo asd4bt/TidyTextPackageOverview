@@ -1,0 +1,59 @@
+---
+title: "TwitterData"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(lubridate)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(tidytext)
+```
+
+One particularly interesting usage for tidytext is analyzing data from social media websites, such as Twitter. To show this, I requested my data archive for my NBA Draft Scouting account (@ kalidrafts), and I will look to see which words I most frequently use in my tweets.
+
+The most challenging part of using tidytext is cleaning the data to match the desired format. Twitter provides a JSON file that must be first converted to a CSV using R. Once imported, the column headers are extremely complex and hard to read (often containing double underscores), and a ton of NA values.
+
+```{r echo = TRUE, results = 'hide', message=FALSE}
+tweets_nick <- read_csv("tweet.csv")
+drops <- c("tweet__retweeted","tweet__truncated", "tweet__favorited", "tweet__possibly_sensitive", "tweet__extended_entities__media__type")
+#Dropping all the columns with values of type boolean - not particularly necessary, but will make the new dataframe easier to replace NAs
+tweets_nick_drop <- tweets_nick[ , !(names(tweets_nick) %in% drops)]
+tweets_nick_drop <- tweets_nick_drop %>%
+                    mutate_all(as.character)
+#Converts all the columns with type "double" to "character"
+tweets_nick_drop[is.na(tweets_nick_drop)] <- "0"
+#Replaces all NAs with 0's.
+```
+
+Now that the dataframe is properly formatted, we can begin using tidytext and dplyr functions to manipulate the data to produce the desired results. We will first filter out all of the retweets (tweets that I re-posted but contain no words from me). Then we will convert the column "tweet__full_text" (the column which contains the body of the tweet) into a character tibble so that we can analyze it.
+
+```{r}
+tweets_nick_with_content <- filter(tweets_nick_drop, tweet__full_text != "0") #filters out retweets
+
+tweet_content <- tweets_nick_with_content$tweet__full_text
+text_df <- tibble(line = 1:197, text = tweet_content)
+text_df <- mutate(text_df, text = tweet_content) #creation of the tibble using the tidyverse function "mutate"
+```
+
+We can use the tidytext function unnest_tokens to split all of the tweets into individual character vectors, each containing one word. Then, we can use the count() function to produce a tibble containing each word and its frequency.
+
+```{r}
+word_count <- text_df %>% unnest_tokens(word, text) %>%  count(word, sort = TRUE)
+word_count <- filter(word_count, word != "https") #I found out that the count() function also included parts of hyperlinks as words. So the next three lines filter these out.
+word_count <- filter(word_count, word != "t.co")
+word_count <- filter(word_count, word != "n")
+word_count
+```
+
+Finally, the tibble produced by tidytext can be easily integrated into ggplot to create a bar graph visualization of the data. 
+
+```{r}
+new_word_count <- head(word_count,25) #take the 25 most frequently used words
+
+word_count_graph <- ggplot(data=new_word_count, aes(x=reorder(word, -n), y=n))  +
+                    geom_bar(stat='identity') + xlab("Word") + ylab("Frequency")
+word_count_graph
+```
