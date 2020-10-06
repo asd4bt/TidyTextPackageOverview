@@ -53,9 +53,9 @@ trump_subset <- tidy_transcript %>%
 
 trump_subset <- trump_subset[-c(2,3,5,6,8,9,10,13,16,18,19,24,29,32,36,38,41,52,53,54,60,61,76,77,78,79,80,89,105,108), ] #removes words that were missed by "stop_words" (these were primarily numbers)
 view(trump_subset)
-#create a word cloud from the 90 most frequently used words
+#create a word cloud from the 105 most frequently used words
 trump_cloud <- trump_subset %>%
-  with(wordcloud(word, n, max.words = 90))
+  with(wordcloud(word, n, max.words = 105))
 
 #create a subset of biden's most used words
 biden_subset <- tidy_transcript %>% 
@@ -65,7 +65,7 @@ biden_subset <- biden_subset[-c(2,3,4,5,7,8,12,13,15,17,19,27,30,34,39,52,65,66,
 view(biden_subset)
 #creates word cloud
 biden_cloud <- biden_subset %>%
-  with(wordcloud(word, n, max.words = 90))
+  with(wordcloud(word, n, max.words = 105))
 
 ```
 
