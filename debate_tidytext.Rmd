@@ -89,7 +89,7 @@ view(debate_sentiment)
 #plot net sentiment vs time to see the "story" of the debate
 ggplot(debate_sentiment, aes(index, sentiment)) +
   geom_col(show.legend = FALSE)+
-  xlab("Time")+
+  xlab("Time Index")+
   ylab("Sentiment")+
   ggtitle("Debate Sentiment vs Time")+
   annotate(geom='text',
