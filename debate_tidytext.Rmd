@@ -35,6 +35,7 @@ view(transcript)
 
 ```
 
+#The purpose of this example is to analyze the transcript from the recent 2020 Presidential Debate. With tidytext, it is possible to extract the most frequently used words by each candidate, and you can even perform a sentiment analysis on the words used throughout the debate. Using tidytext, I created "word clouds" for each candidate that display their most used words throughout the debate, and I also created a plot that expresses the sentiment of the debate (Trump, Biden, and the moderator included) versus time.
 
 ```{r}
 
