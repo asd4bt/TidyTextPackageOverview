@@ -28,50 +28,88 @@ library(ggwordcloud)
 
 ```
 
-```{r}
+## Overview
+
+The purpose of this project is to analyze the transcript from the recent 2020 Presidential Debate. With **tidytext**, it is possible to extract the most frequently used words by each candidate, and also perform a sentiment analysis on the words used throughout the debate. Using tidytext, I created "word clouds" for each candidate that display their most used words throughout the debate, and I also created a plot that expresses the sentiment of the debate versus time (Trump, Biden, and the moderator included).
+
+## Process
+
+### Load in the Data
+
+```{r,cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 #load in debate transcript data
 transcript <- read_excel("debate_text3.xlsx")
-view(transcript)
-
+View(transcript)
 ```
 
-The purpose of this example is to analyze the transcript from the recent 2020 Presidential Debate. With tidytext, it is possible to extract the most frequently used words by each candidate, and you can even perform a sentiment analysis on the words used throughout the debate. Using tidytext, I created "word clouds" for each candidate that display their most used words throughout the debate, and I also created a plot that expresses the sentiment of the debate (Trump, Biden, and the moderator included) versus time.
+### Tidy up the Data and Create Word Clouds
 
-```{r}
+Using the tidytext function *unnest_tokens*, the *stop_words* library, and other functions from *dplyr*, a tidy data set is created from the debate transcript. Then, subsets are made for Trump and Biden in order to create the wordclouds for each candidate. 
+
+```{r,cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 
 #create a "tidy" df from the transcript data by using features like unnest_tokens and stop_words
 tidy_transcript <- transcript %>%
   unnest_tokens(word, text) %>% #separates text column from chunks of text to one word rows
   anti_join(stop_words) %>% #excludes ultra common words such as "a", "the", "of", etc.
   group_by(speaker) %>%
-  count(word, sort=TRUE) %>% #counts the frequency of each word and sorts from highest to lowest
+  count(word, sort=TRUE) #counts the frequency of each word and sorts from highest to lowest
 view(tidy_transcript)
 
+```
 
-#create a subset of trump's most used words
-trump_subset <- tidy_transcript %>% 
-  filter(speaker == "President Donald J. Trump")
+#### Biden Cloud
 
-trump_subset <- trump_subset[-c(2,3,5,6,8,9,10,13,16,18,19,24,29,32,36,38,41,52,53,54,60,61,76,77,78,79,80,89,105,108), ] #removes words that were missed by "stop_words" (these were primarily numbers)
-view(trump_subset)
-#create a word cloud from the 105 most frequently used words
-trump_cloud <- trump_subset %>%
-  with(wordcloud(word, n, max.words = 105))
+```{r, cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 
 #create a subset of biden's most used words
 biden_subset <- tidy_transcript %>% 
   filter(speaker == "Vice President Joe Biden")
-
 biden_subset <- biden_subset[-c(2,3,4,5,7,8,12,13,15,17,19,27,30,34,39,52,65,66,74,84,85,87,88,89,103,104,121,127,128,129,130,131,132), ] #removes words missed by stop_words
 view(biden_subset)
-#creates word cloud
-biden_cloud <- biden_subset %>%
-  with(wordcloud(word, n, max.words = 105))
+
+#wordcloud2 generation
+cloud_biden <- biden_subset %>% 
+  subset(select = -speaker) %>% 
+  filter(n>=3)
+view(cloud_biden)
+
+cloud_b <- wordcloud2(data = cloud_biden, color = "blue")
+cloud_b
+
+```
+
+#### Trump Cloud
+
+```{r, cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+
+#create a subset of trump's most used words
+trump_subset <- tidy_transcript %>% 
+  filter(speaker == "President Donald J. Trump")
+trump_subset <- trump_subset[-c(2,3,5,6,8,9,10,13,16,18,19,24,29,32,36,38,41,52,53,54,60,61,76,77,78,79,80,89,105,108), ] #removes words that were missed by "stop_words" (these were primarily numbers)
+view(trump_subset)
+
+#wordcloud2 generation
+cloud_trump <- trump_subset %>%
+  subset(select = -speaker) %>%
+  filter(n>=3)
+view(cloud_trump)
+
+ggplot(cloud_trump, aes(label = word, size = n, color = "red4")) +
+  geom_text_wordcloud() +
+  theme_minimal()+
+  scale_radius(range = c(0, 25), limits = c(0, NA))
 
 ```
 
 
-```{r}
+
+### Sentiment Analysis throughout the Debate
+
+I wanted to plot the "net sentiment" of the debate versus time, so I used the **bing** sentiment lexicon and created a time index in order to plot the net sentiment throughout the debate. The time index is simply one-minute intervals, which I believed would capture enough words spoken by the candidates and moderator to garner a useful net sentiment value; the net sentiment is simply the number of positive sentiments minus negative sentiments over each one minute interval.
+
+```{r,cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+
 #plots the sentiment of the debate vs time
 unnested <- transcript %>%
   unnest_tokens(word, text) %>% #tidy the data
@@ -93,13 +131,11 @@ ggplot(debate_sentiment, aes(index, sentiment)) +
   ylab("Sentiment")+
   ggtitle("Debate Sentiment vs Time")+
   annotate(geom='text',
-           x = 60, y = 7,
-           label=glue::glue("Sentiment above x-axis = positive, below = negative"),
+           x = 60, y = 6.5,
+           label=glue::glue("[Sentiment above x-axis = positive, below = negative]"),
            size=4)+ #add label explaining 
   theme_minimal()
 
-#as expected (if you watched the debate) the sentiment is primarily negative throughout the entire debate!
-
 ```
 
-
+As expected (if you watched the debate) the sentiment is primarily negative throughout the entire debate! Although sentiment analysis does not take context into account when it assigns a "positive" or "negative" association to a word, this plot could be an indicator of a country's state/well-being as the subjects focused on in the debate were primarily negative (violence, disease, etc.).
