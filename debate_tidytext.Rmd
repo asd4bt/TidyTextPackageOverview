@@ -125,16 +125,18 @@ debate_sentiment <- unnested %>%
 view(debate_sentiment)
 
 #plot net sentiment vs time to see the "story" of the debate
-ggplot(debate_sentiment, aes(index, sentiment)) +
+sentiment_plot <- ggplot(debate_sentiment, aes(index, sentiment, fill = "red")) +
   geom_col(show.legend = FALSE)+
-  xlab("Time Index")+
+  xlab("Time Index (minutes)")+
   ylab("Sentiment")+
   ggtitle("Debate Sentiment vs Time")+
   annotate(geom='text',
            x = 60, y = 6.5,
            label=glue::glue("[Sentiment above x-axis = positive, below = negative]"),
            size=4)+ #add label explaining 
-  theme_minimal()
+  theme_minimal()+
+  theme(panel.grid.major.x = element_line(color = "grey"), panel.grid.minor.x = element_blank(), panel.grid.major.y = element_line(color = "grey"), panel.grid.minor.y = element_blank(), panel.border = element_blank(), axis.title.y = element_text(face="bold", size=10), axis.title.x=element_text(face="bold", size=10), plot.title = element_text(face="bold"))
+sentiment_plot
 
 ```
 
