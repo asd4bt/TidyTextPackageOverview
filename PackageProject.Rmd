@@ -70,14 +70,14 @@ janeaus_pers %>% unnest_tokens(word, persuasion)
 
 However, unnest_tokens() also has an argument, token=, that can be used to specify what token you'd like the function to divide the text input into. some arguments could be "characters", "ngrams" with n=, "sentences", "lines", "paragraphs", etc. N-grams are sets of words of a given length specified by n. However, tidytext also offers specific functions that do the same thing as specifying a token in unnest_tokens(). Those are below.
 
-####unnest_characters()
+#### unnest_characters()
 This function will split the text file into individual characters per line.
 
 ```{r}
 janeaus_pers %>% unnest_characters(character, persuasion)
 ```
 
-####unnest_ngrams()
+#### unnest_ngrams()
 This function will split the text file into n-grams per line, depending on the length of the n-gram that you give it.
 
 ```{r}
@@ -86,7 +86,7 @@ janeaus_pers %>% unnest_ngrams(two_ngram, persuasion, n=2)
 janeaus_pers %>% unnest_ngrams(two_ngram, persuasion, n=7)
 ```
 
-####unnest_sentences()
+#### unnest_sentences()
 This function will split the text file into one sentence per line, divided by the period.
 
 ```{r}
