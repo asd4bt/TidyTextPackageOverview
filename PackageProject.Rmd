@@ -27,7 +27,9 @@ library(readxl)
 library(wordcloud)
 library(reshape2)
 library(ggwordcloud)
+library(wordcloud2)
 library(lubridate)
+library(janeaustenr)
 ```
 
 ```{r, echo=FALSE, out.width="25%", fig.height=3, fig.width=2, fig.align="center"}
@@ -35,7 +37,7 @@ knitr::include_graphics("tidytextlogo.png")
 ```
 
 ## Package Overview{.tabset}
-TidyText is intended to help with Text Mining in R, and provide supplemental functions for the mining process. The latest version of the tidytext package is v0.2.6, created by Julia Silge and David Robinson, and was first created in 2016 after realizing that the data wrangling process in relation to text data was quite difficult in comparison to normal data mining processes. This package is most ideally used hand-in-hand with dplyr, ggplot2, tidyr, broom, and other packages that help with tidying and visualizing data. Text mining is made exceptionally easier and effective through the use of tidy data methodologies and principles. Tidytext’s primary function is to provide some additional tools to further streamline the process of converting text to a tidy format, and allow for a swift and simple transition between raw text data and tidy tools for text mining and visualization. 
+TidyText is intended to help with Text Mining in R, and provide supplemental functions for the mining process. The latest version of the tidytext package is v0.2.6, created by Julia Silge and David Robinson, and was first created in 2016 after realizing that the data wrangling process in relation to text data was quite difficult in comparison to normal data mining processes. This package is most ideally used hand-in-hand with dplyr, ggplot2, tidyr, broom, and other packages that help with tidying and visualizing data. Text mining is made exceptionally easier and effective through the use of tidy data methodologies and principles. Tidytext’s primary function is to provide some additional tools to further streamline the process of converting text to a tidy format, and allow for a swift and simple transition between raw text data and tidy tools for text mining and visualization. It also provides preloaded datasets of things like parts of speech, predenoted sentiments for words, negator words, and stopwords for easy cleaning with a simple anti_join(). 
 
 ```{r, echo=FALSE, out.width="75%", fig.height=3, fig.width=2, fig.align="center"}
 knitr::include_graphics("tidytextprocess.png")
@@ -44,16 +46,84 @@ knitr::include_graphics("tidytextprocess.png")
 The ultimate goal is to be able to turn text into a dataframe format of each word for easy summarization and visualization. Sentimental analysis, common word choice, and other characteristic visualizations of the text are infinitely simpler through this conversion. As a whole, the functions are fairly simple to understand and use - it’s the expanse of applications that are the focus of what this package can help do. This package also contains various text datasets pre-loaded that can be used for the purposes of text mining too.
 
 ### Package Dependencies
-There are no real dependencies, but in order to actually move forward with drawing conclusions and analysis of the dataframe you will create with the tidied word data, standard tidy packages like **dplyr**, **tidyr**, **ggplot2**, and **broom** should be used.
+There are no real dependencies apart from R (≥ 2.10), but in order to actually move forward with drawing conclusions and analysis of the dataframe you will create with the tidied word data, standard tidy packages like **dplyr**, **tidyr**, **ggplot2**, and **broom** should be used.
 
 Because tidytext essentially sets up text data to be manipulated, there are many packages in the R environment that it can be used cohesively with. For example, **readr** is a package that allows you to read in files that are in the CSV format, tab separated, general delimited (text files), and more. **Stopwords** is an R package that has an aggregation of stopwords from multiple different data sources on the internet so that it is easy to gather a general list of stop words that you can then remove from text files to ensure more robust analysis. They can be looked up by starting letters and source. Stop words are words in a language that do not offer much meaning or value to the sentence. 
 
 ### Version History
 The current version is v0.2.6 published on September 20th, 2020, with the earliest version being v0.1.0, made in 2016. 
 
+## General Function Examples of Usage
+For the purpose of these examples,  we will be using one of tidytext's preloaded text files in a subpackage, **janeaustenr**. The book we will be using is Persuasion. 
 
+```{r}
+janeaus_pers = tibble(persuasion)
+```
 
-## Examples of Usage{.tabset}
+### unnest_tokens
+Unnest_tokens() is the one of the primary functions that the tidytext package provides. It allows the user to split a columnized character vector of an entire text into tokens. It outputs a table that has one token per row. Tokens can be anything from characters to entire sentences. By default, unnest_tokens() breaks the input out into one word per row of the table. Piping (%>%) from dplyr is used to unnest_tokens, with the output column name as the first argument, and the input column that is being split as the second.
+
+This basic use is demonstrated below:
+```{r}
+janeaus_pers %>% unnest_tokens(word, persuasion)
+```
+
+However, unnest_tokens() also has an argument, token=, that can be used to specify what token you'd like the function to divide the text input into. some arguments could be "characters", "ngrams" with n=, "sentences", "lines", "paragraphs", etc. N-grams are sets of words of a given length specified by n. However, tidytext also offers specific functions that do the same thing as specifying a token in unnest_tokens(). Those are below.
+
+####unnest_characters()
+This function will split the text file into individual characters per line.
+
+```{r}
+janeaus_pers %>% unnest_characters(character, persuasion)
+```
+
+####unnest_ngrams()
+This function will split the text file into n-grams per line, depending on the length of the n-gram that you give it.
+
+```{r}
+janeaus_pers %>% unnest_ngrams(two_ngram, persuasion, n=2)
+
+janeaus_pers %>% unnest_ngrams(two_ngram, persuasion, n=7)
+```
+
+####unnest_sentences()
+This function will split the text file into one sentence per line, divided by the period.
+
+```{r}
+janeaus_pers %>% unnest_sentences(sentence, persuasion)
+```
+
+### Pre-Loaded datasets
+In addition to the unnest functions that tidytext includes, there are also preloaded datasets that can be very useful for those using this package for text mining and cleaning. These can be used through piping an anti_join(dataframe) to remove these words from your unnested dataframe, or other things like a filter in order to get just instances of these words.
+
+#### nma_words
+The first of which is nma_words, which if you run individually will be a table of words and two-word phrases of negators and adverbs in the English language. This could be helpful with sentiment analysis or removing indifferent words from a dataset. This dataframe has 44 rows and 2 variables, the first column being the word and the second column being the modifier classifier (negator, modal, adverb).
+
+```{r}
+nma_words
+```
+
+#### stop_words
+stop_words is a dataframe with 1149 rows and 2 variables, word and lexicon, or source of the stopword. Stopwords, as aforementioned, are words that are typically like 'fillers' in the english language, not contributing to the meaning of the sentence. You can use the function, get_stopwords() to pull the dataframe, or just run stop_words, the name of the literal dataframe.
+
+```{r}
+stop_words
+```
+
+#### sentiments
+sentiments is a dataset from creators Minqing Hu and Bing Liu, who through their own research and analysis, have assigned sentiment labels (either positive or negative) to thousands of words in the English language to be used through this package. There are 6786 rows and two variables, word and sentiment. Like with stop_words, get_sentiments() will pull the dataframe, while running sentiments will provide the literal dataframe.
+
+```{r}
+sentiments
+```
+
+#### parts of speech
+Finally, Grady Ward created the Moby Project, which is where this parts_of_speech dataframe is pulling information about the parts of speech for English words from. Similar to those above, this dataframe has 2 variables, word and pos. Pos can be one of 13 options, for example "Adjective" or "Noun". There are over 200,000 rows. 
+```{r}
+parts_of_speech
+```
+
+## Real World Examples of Usage{.tabset}
 
 ### Twitter Data
 One particularly interesting usage for tidytext is analyzing data from social media websites, such as Twitter. To show this, I requested my data archive for my NBA Draft Scouting account (@ kalidrafts), and I will look to see which words I most frequently use in my tweets.
@@ -84,7 +154,7 @@ text_df <- mutate(text_df, text = tweet_content) #creation of the tibble using t
 We can use the tidytext function unnest_tokens to split all of the tweets into individual character vectors, each containing one word. Then, we can use the count() function to produce a tibble containing each word and its frequency.
 
 ```{r,cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
-word_count <- text_df %>% unnest_tokens(word, text) %>%  count(word, sort = TRUE)
+word_count <- text_df %>% unnest_tokens(word, text) %>% anti_join(stop_words) %>% count(word, sort = TRUE)
 word_count <- filter(word_count, word != "https") #I found out that the count() function also included parts of hyperlinks as words. So the next three lines filter these out.
 word_count <- filter(word_count, word != "t.co")
 word_count <- filter(word_count, word != "n")
@@ -93,21 +163,31 @@ word_count
 
 Finally, the tibble produced by tidytext can be easily integrated into ggplot to create a bar graph visualization of the data. 
 
-```{r,cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
 new_word_count <- head(word_count,25) #take the 25 most frequently used words
 word_count_graph <- ggplot(data=new_word_count, aes(x=reorder(word, -n), y=n))  +
-                    geom_bar(stat='identity') + xlab("Word") + ylab("Frequency")
+                    geom_bar(stat='identity') + xlab("Word") + ylab("Frequency") + coord_flip()
 word_count_graph
 ```
 
 ### Presidential Debate Data
+#### Overview
+
+The purpose of this project is to analyze the transcript from the recent 2020 Presidential Debate. With **tidytext**, it is possible to extract the most frequently used words by each candidate, and also perform a sentiment analysis on the words used throughout the debate. Using tidytext, I created "word clouds" for each candidate that display their most used words throughout the debate, and I also created a plot that expresses the sentiment of the debate versus time (Trump, Biden, and the moderator included).
+
+#### Process
+
+##### Load in the Data
+
 ```{r,cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 #load in debate transcript data
 transcript <- read_excel("debate_text3.xlsx")
 View(transcript)
 ```
 
-The purpose of this example is to analyze the transcript from the recent 2020 Presidential Debate. With tidytext, it is possible to extract the most frequently used words by each candidate, and you can even perform a sentiment analysis on the words used throughout the debate. Using tidytext, I created "word clouds" for each candidate that display their most used words throughout the debate, and I also created a plot that expresses the sentiment of the debate (Trump, Biden, and the moderator included) versus time.
+##### Tidy up the Data and Create Word Clouds
+
+Using the tidytext function *unnest_tokens*, the *stop_words* library, and other functions from *dplyr*, a tidy data set is created from the debate transcript. Then, subsets are made for Trump and Biden in order to create the wordclouds for each candidate. 
 
 ```{r,cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 #create a "tidy" df from the transcript data by using features like unnest_tokens and stop_words
@@ -115,26 +195,51 @@ tidy_transcript <- transcript %>%
   unnest_tokens(word, text) %>% #separates text column from chunks of text to one word rows
   anti_join(stop_words) %>% #excludes ultra common words such as "a", "the", "of", etc.
   group_by(speaker) %>%
-  count(word, sort=TRUE) %>% #counts the frequency of each word and sorts from highest to lowest
+  count(word, sort=TRUE) #counts the frequency of each word and sorts from highest to lowest
 view(tidy_transcript)
-#create a subset of trump's most used words
-trump_subset <- tidy_transcript %>% 
-  filter(speaker == "President Donald J. Trump")
-trump_subset <- trump_subset[-c(2,3,5,6,8,9,10,13,16,18,19,24,29,32,36,38,41,52,53,54,60,61,76,77,78,79,80,89,105,108), ] #removes words that were missed by "stop_words" (these were primarily numbers)
-view(trump_subset)
-#create a word cloud from the 105 most frequently used words
-trump_cloud <- trump_subset %>%
-  with(wordcloud(word, n, max.words = 105))
+```
+
+###### Biden Cloud
+
+```{r, cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 #create a subset of biden's most used words
 biden_subset <- tidy_transcript %>% 
   filter(speaker == "Vice President Joe Biden")
 biden_subset <- biden_subset[-c(2,3,4,5,7,8,12,13,15,17,19,27,30,34,39,52,65,66,74,84,85,87,88,89,103,104,121,127,128,129,130,131,132), ] #removes words missed by stop_words
 view(biden_subset)
-#creates word cloud
-biden_cloud <- biden_subset %>%
-  with(wordcloud(word, n, max.words = 105))
+#wordcloud2 generation
+cloud_biden <- biden_subset %>% 
+  subset(select = -speaker) %>% 
+  filter(n>=3)
+view(cloud_biden)
+cloud_b <- wordcloud2(data = cloud_biden, color = "blue")
+cloud_b
 ```
 
+###### Trump Cloud
+
+```{r, cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+#create a subset of trump's most used words
+trump_subset <- tidy_transcript %>% 
+  filter(speaker == "President Donald J. Trump")
+trump_subset <- trump_subset[-c(2,3,5,6,8,9,10,13,16,18,19,24,29,32,36,38,41,52,53,54,60,61,76,77,78,79,80,89,105,108), ] #removes words that were missed by "stop_words" (these were primarily numbers)
+view(trump_subset)
+#wordcloud2 generation
+cloud_trump <- trump_subset %>%
+  subset(select = -speaker) %>%
+  filter(n>=3)
+view(cloud_trump)
+ggplot(cloud_trump, aes(label = word, size = n, color = "red4")) +
+  geom_text_wordcloud() +
+  theme_minimal()+
+  scale_radius(range = c(0, 25), limits = c(0, NA))
+```
+
+
+
+##### Sentiment Analysis throughout the Debate
+
+I wanted to plot the "net sentiment" of the debate versus time, so I used the **bing** sentiment lexicon and created a time index in order to plot the net sentiment throughout the debate. The time index is simply one-minute intervals, which I believed would capture enough words spoken by the candidates and moderator to garner a useful net sentiment value; the net sentiment is simply the number of positive sentiments minus negative sentiments over each one minute interval.
 
 ```{r,cache=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
 #plots the sentiment of the debate vs time
@@ -150,18 +255,21 @@ debate_sentiment <- unnested %>%
   mutate(sentiment = positive - negative) #calculate new sentiment
 view(debate_sentiment)
 #plot net sentiment vs time to see the "story" of the debate
-ggplot(debate_sentiment, aes(index, sentiment)) +
+sentiment_plot <- ggplot(debate_sentiment, aes(index, sentiment, fill = "red")) +
   geom_col(show.legend = FALSE)+
-  xlab("Time Index")+
+  xlab("Time Index (minutes)")+
   ylab("Sentiment")+
   ggtitle("Debate Sentiment vs Time")+
   annotate(geom='text',
-           x = 60, y = 7,
-           label=glue::glue("Sentiment above x-axis = positive, below = negative"),
+           x = 60, y = 6.5,
+           label=glue::glue("[Sentiment above x-axis = positive, below = negative]"),
            size=4)+ #add label explaining 
-  theme_minimal()
-#as expected (if you watched the debate) the sentiment is primarily negative throughout the entire debate!
+  theme_minimal()+
+  theme(panel.grid.major.x = element_line(color = "grey"), panel.grid.minor.x = element_blank(), panel.grid.major.y = element_line(color = "grey"), panel.grid.minor.y = element_blank(), panel.border = element_blank(), axis.title.y = element_text(face="bold", size=10), axis.title.x=element_text(face="bold", size=10), plot.title = element_text(face="bold"))
+sentiment_plot
 ```
+
+As expected (if you watched the debate) the sentiment is primarily negative throughout the entire debate! Although sentiment analysis does not take context into account when it assigns a "positive" or "negative" association to a word, this plot could be an indicator of a country's state/well-being as the subjects focused on in the debate were primarily negative (violence, disease, etc.).
 
 ### Harry Potter Data
 tidytext can be used for the purpose of analyzing word and document frequencies as well. The purpose of this would be to better understand what types of words are common amongst sets of works, as well as figure out what distinguishing words/characteristics of words are used to separate texts from one another. For this example I will be analyzing the word frequency from the 7 different Harry Potter books that author J.K. Rowling has written. Tf, or term frequency, is used to describe how often a word is mentioned within a document. However, many stopwords, or words that are indifferent to the meaning of the sentence, will result in having often times very large tf's due to the their frequent use in the english language. To account for this, inverse document frequency, or idf, can be used which essentially decreases the weight for commonly used words, and in turn will cause more rare words to have heavier weights. Multiplying tf and idf together will produce an adjusted term frequency based on the term's rarity. 
@@ -194,7 +302,7 @@ hp6 = hp6 %>% unnest_tokens(word, text) %>% group_by(word) %>% summarise(count =
 hp7 = hp7 %>% unnest_tokens(word, text) %>% group_by(word) %>% summarise(count = n())
 ```
 
-```{r, cache=TRUE,warning=FALSE, message=FALSE, echo=TRUE}
+```{r,warning=FALSE, message=FALSE, echo=TRUE}
 #harry potter 1
 hp1_tot = sum(hp1$count)
 hp1$total = replicate(nrow(hp1), hp1_tot)
@@ -234,8 +342,8 @@ hp7$book = replicate(nrow(hp7), "Deathly Hallows")
 all_books = rbind(hp1, hp2, hp3, hp4, hp5, hp6, hp7)
 ```
 
-Using the bind_tf_idf() function in tidytext, we can create 3 new columns in our dataframe that will automatically calculate the term frequency, inverse document frequency, and the tf-idf.
-```{r, cache=TRUE,warning=FALSE, message=FALSE, echo=TRUE}
+Using the bind_tf_idf() function in tidytext, we can create 3 new columns in our dataframe that will automatically calculate the term frequency, inverse document frequency, and the tf-idf. While stopwords can be removed for the purpose of this type of analysis, the results will potentially be skewed/impacted by this removal, as the term frequency will no longer include these words within the total number of terms in the documents. This could cause other words' frequencies to be biased higher or lower, depending. 
+```{r,warning=FALSE, message=FALSE, echo=TRUE}
 all_books = all_books %>% bind_tf_idf(word, book, count) %>% arrange(desc(tf_idf))
 ```
 
@@ -248,12 +356,11 @@ This first faceted histogram shows the extremely skewed distribution of term fre
 This next graph now displays the top 10 words with the highest tf-idf value for each of the 7 texts. We can see the uniqueness of the majority of these words, as well as their specification to their respective books. This tells us that for the most part it seems as though the general language usage across all of J.K. Rowling's books in the series is similar. The characters are all similar for the most part, which is why we do not see names like Harry, Hermione, or Ron in the tops of these charts, as they are common and frequent across all documents in our set. We see now words are are frequent for their own book and thus allows for differentiation. These are words like the names of the specific professors that played large roles per book, as well as things like hallow for the 7th book. 
 
 ```{r,warning=FALSE, message=FALSE, fig.align="center"}
-all_books %>% group_by(book) %>% top_n(10) %>% ungroup() %>% mutate(word = as.factor(word)) %>%
-  ggplot(aes(x=word, y=tf_idf, fill=book)) + geom_col(show.legend=FALSE) + 
+all_books %>% group_by(book) %>% top_n(10) %>% ungroup() %>%
+  ggplot(aes(x=reorder(word, tf_idf), y=tf_idf, fill=book)) + geom_bar(stat= "identity", show.legend=FALSE) + 
   facet_wrap(~book, scales="free") +
-  coord_flip()
+  coord_flip() + labs(x="Word", y="tf*idf")
 ```
-
 
 
 ## Similar Packages{.tabset}
